@@ -4,15 +4,24 @@
           [clojurewerkz.titanium.edges :as te]
           [clojurewerkz.titanium.vertices :as tv]
           [clojurewerkz.titanium.types :as tt]
-          [clojurewerkz.titanium.query :as tq]]
-  [:require [ogre.tinkergraph :as g]]
-  [:require [ogre.core :as q]])
+          [clojurewerkz.titanium.query :as tq]
+          [potemkin :as po]
+          [ogre.tinkergraph :as g]
+          [ogre.core :as q]])
+
+(po/import-macro tg/transact!)
+(po/import-fn tv/find-by-id)
+(po/import-fn tv/find-by-kv)
+(po/import-fn tv/create!)
 
 (defn nice-id [m]
   (clojure.set/rename-keys m {:__id__ :id}))
 
+(defn json-friendly! [v]
+  (map #(-> % tv/to-map nice-id) v))
+
 (defn maps-with-ids! [p]
-  (map #(-> % tv/to-map nice-id) (q/into-vec! p)))
+  (-> p q/into-vec! json-friendly!))
 
 (defn get-coworkers [id]
   (tg/transact!
@@ -32,13 +41,11 @@
     ; TODO: update to alpha4-SNAPSHOT and change this
     ; will become `create-property-key`
     (tt/create-vertex-key
-      :name String {:indexed true :unique-direction :out})
-    (let [ck (tv/create! {:name "Colin"})
-          nc (tv/create! {:name "Nathaniel"})
-          rg (tv/create! {:name "Ryan"})]
-      (make-coworkers! ck rg nc)
+      :type String {:indexed true})
+    (let [ck (tv/create! {:name "Colin" :type "worker"})
+          nc (tv/create! {:name "Nathaniel" :type "worker"})
+          rg (tv/create! {:name "Ryan" :type "worker"})]
       (te/connect! ck :employee nc)
       (te/connect! rg :employee nc)
       (te/connect! nc :boss ck)
-      (te/connect! nc :boss rg)
-    )))
+      (te/connect! nc :boss rg))))

@@ -6,19 +6,20 @@
 
 (defroutes handler
   (GET "/" []
-    (response {"hello" "carl"}))
+    (response {:hello "World"}))
 
-  (GET "/:name/coworkers" [name]
+  (GET "/workers" []
+    (response 
+      {:workers (t/json-friendly! (t/find-by-kv :type "worker"))}
+    ))
+
+  (GET "/:id/coworkers" [id]
     (response
-      (t/get-coworkers name)))
+      (t/get-coworkers id)))
 
-  (PUT "/" {{name :name} :body} 
-      (t/add-coworker! "Colin" name)
-      (response {"added" name}))
-
-  (PUT "/test" {body :body} 
-    (println body)
-    (response body))
+  (PUT "/" {{ids :ids} :body} 
+      (apply t/make-coworkers! (t/find-by-id ids))
+      (response {"added" ids}))
 )
 
 (def app
