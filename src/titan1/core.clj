@@ -18,7 +18,11 @@
   (clojure.set/rename-keys m {:__id__ :id}))
 
 (defn json-friendly! [v]
-  (map #(-> % tv/to-map nice-id) v))
+    (doall (map #(-> % tv/to-map nice-id) v)))
+
+(defn get-workers []
+  (tg/transact!
+    (json-friendly! (tv/find-by-kv :type "worker"))))
 
 (defn maps-with-ids! [p]
   (-> p q/into-vec! json-friendly!))
@@ -33,15 +37,17 @@
     (if (not= v1 v2) 
       (te/connect! v1 :coworker v2))))
 
+(def graph-config
+  {"storage.backend" "cassandra"
+   "storage.hostname" "localhost"})
+
 (defn make-test-graph
   "Make a temporary graph in memory"
   []
-  (tg/open-in-memory-graph)
+  (tg/open graph-config)
   (tg/transact!
-    ; TODO: update to alpha4-SNAPSHOT and change this
-    ; will become `create-property-key`
-    (tt/create-vertex-key
-      :type String {:indexed true})
+    (tt/defkey-once
+      :type String {:indexed-vertex? true :unique-direction :out})
     (let [ck (tv/create! {:name "Colin" :type "worker"})
           nc (tv/create! {:name "Nathaniel" :type "worker"})
           rg (tv/create! {:name "Ryan" :type "worker"})]

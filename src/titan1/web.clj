@@ -10,7 +10,7 @@
 
   (GET "/workers" []
     (response 
-      {:workers (t/json-friendly! (t/find-by-kv :type "worker"))}
+      {:workers (t/get-workers)}
     ))
 
   (GET "/:id/coworkers" [id]
